@@ -1,0 +1,12 @@
+{application, goose_game,
+ [{description, "An OTP application"}
+ ,{vsn, "0.1.0"}
+ ,{registered, []}
+ ,{mod, {'goose_game_app', []}}
+ ,{applications,
+   [kernel
+   ,stdlib
+   ]}
+ ,{env,[]}
+ ,{modules, []}
+ ]}.
