@@ -1,4 +1,4 @@
-# goose_gamei
+# goose_game
 
 Compile as:
 
