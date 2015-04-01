@@ -1,0 +1,12 @@
+[{<<"gen_leader">>,
+  {git,"git://github.com/abecciu/gen_leader_revival.git",
+       {ref,"a119cb9a39f94254247962bce4616b6f607cca80"}},
+  1},
+ {<<"edown">>,
+  {git,"git://github.com/esl/edown.git",
+       {ref,"4d18dc4bec89c20c0ba8cab6884ce690ca606f4a"}},
+  1},
+ {<<"gproc">>,
+  {git,"git://github.com/uwiger/gproc.git",
+       {ref,"1b81e72fd5005b817794d6baa6d08da3faf8b179"}},
+  0}].
