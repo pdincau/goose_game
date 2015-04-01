@@ -19,9 +19,11 @@ handle_event(#add_player{name=Name} = _Command , State) ->
     io:format("Received command add_player with name: ~p~n", [Name]),
     case players:find(Name) of
         {error, not_found} ->
-            io:format("Start new player~n", []);
+            io:format("Start new player with name: ~p~n", [Name]),
+            player:start(Name);
         {ok, _Pid} ->
-            io:format("There is already a player with name: ~p~n", [Name])
+            io:format("There is already a player with name: ~p~n", [Name]),
+            ok
     end,
     {ok, State};
 
