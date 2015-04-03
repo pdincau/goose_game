@@ -15,7 +15,7 @@ subscribe() ->
 init([]) ->
     {ok, #state{}}.
 
-handle_event(#add_player{name=Name} = _Command , State) ->
+handle_event(#add_player{name=Name}, State) ->
     io:format("Received command add_player with name: ~p~n", [Name]),
     handle_add_player(Name),
     {ok, State};
