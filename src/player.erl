@@ -1,22 +1,17 @@
 -module(player).
--export([start/1, save/1, reload/1, init/0]).
+-export([start/2, init/0]).
 
 -record(state, {name, events}).
 -record(player_created, {name, date_created}).
 
-start(Name) ->
+start(Name, []) ->
     Pid = spawn(?MODULE, init, []),
     Pid ! {attempt_command, {create, Name}},
-    Pid.
+    Pid ! process_unsaved_events;
 
-save(Pid) ->
-    Pid ! process_unsaved_events,
-    ok.
-
-reload(Events) ->
+start(_Name, Events) ->
     Pid = spawn(?MODULE, init, []),
-    Pid ! {replay_events, Events},
-    Pid.
+    Pid ! {replay_events, Events}.
 
 init() ->
     loop(#state{events=[]}).
@@ -35,6 +30,8 @@ loop(State) ->
         Msg ->
             handle_unknown_message(Msg, State),
             loop(State)
+    after 3000 ->
+            ok
     end.
 
 attempt_command({create, Name}, State) ->

@@ -41,8 +41,8 @@ handle_add_player(Name) ->
     case players:find(Name) of
         {error, not_found} ->
             io:format("Start new player with name: ~p~n", [Name]),
-            Pid = player:start(Name),
-            player:save(Pid);
+            Events = event_store:get(Name),
+            player:start(Name, Events);
         {ok, _Pid} ->
             io:format("There is already a player with name: ~p~n", [Name]),
             ok
