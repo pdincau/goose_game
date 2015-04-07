@@ -4,6 +4,9 @@
 -record(state, {name, events}).
 -record(player_created, {name, date_created}).
 
+-define(TIMEOUT, 3000).
+-define(KEY(Name), {n, l, {?MODULE, Name}}).
+
 start(Name, []) ->
     Pid = spawn(?MODULE, init, []),
     Pid ! {attempt_command, {create, Name}},
@@ -30,7 +33,7 @@ loop(State) ->
         Msg ->
             handle_unknown_message(Msg, State),
             loop(State)
-    after 3000 ->
+    after ?TIMEOUT ->
             ok
     end.
 
@@ -46,8 +49,8 @@ apply_new_event(Event, State) ->
 apply_event(#player_created{name=Name, date_created=_DateCreated}, State) ->
     case gproc:where({n,l, {player, Name}}) of
         undefined ->
-            gproc:reg({n, l, {player, Name}}),
-            gproc:await({n,l, {player, Name}});
+            gproc:reg(?KEY(Name)),
+            gproc:await(?KEY(Name));
         Pid -> Pid
     end,
     State#state{name=Name}.
