@@ -1,5 +1,5 @@
 -module(player).
--export([start/2, init/0]).
+-export([start/1, init/0]).
 
 -record(state, {name, events}).
 -record(player_created, {name, date_created}).
@@ -7,14 +7,15 @@
 -define(TIMEOUT, 3000).
 -define(KEY(Name), {n, l, {?MODULE, Name}}).
 
-start(Name, []) ->
+start(Name) ->
     Pid = spawn(?MODULE, init, []),
-    Pid ! {attempt_command, {create, Name}},
-    Pid ! process_unsaved_events;
-
-start(_Name, Events) ->
-    Pid = spawn(?MODULE, init, []),
-    Pid ! {replay_events, Events}.
+    case event_store:get(Name) of
+        [] ->
+            Pid ! {attempt_command, {create, Name}},
+            Pid ! process_unsaved_events;
+        Events ->
+            Pid ! {replay_events, Events}
+    end.
 
 init() ->
     loop(#state{events=[]}).
