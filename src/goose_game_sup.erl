@@ -16,6 +16,6 @@ start_link() ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
 init([]) ->
-    Children = [?CHILD(command_bus, worker)],
+    Children = [?CHILD(command_bus, worker), ?CHILD(event_bus, worker)],
     RestartStrategy = {one_for_one, 10, 60},
     {ok, {RestartStrategy, Children}}.

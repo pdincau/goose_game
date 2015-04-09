@@ -10,6 +10,7 @@ start(_StartType, _StartArgs) ->
     case goose_game_sup:start_link() of
         {ok, Pid} ->
             command_handler:subscribe(),
+            event_handler:subscribe(),
             {ok, Pid};
         Other ->
             {error, Other}
