@@ -4,7 +4,7 @@
 -record(state, {name, events}).
 -record(player_created, {name, date_created}).
 
--define(TIMEOUT, 3000).
+-define(TIMEOUT, 10000).
 -define(KEY(Name), {n, l, {?MODULE, Name}}).
 
 start(Name) ->
@@ -70,5 +70,5 @@ handle_replay_events([], State) ->
 
 handle_replay_events([Event|Events], State) ->
     io:format("Event ~p on state ~p~n", [Event, State]),
-    NewState = apply_new_event(Event, State),
+    NewState = apply_event(Event, State),
     handle_replay_events(Events, NewState).
