@@ -48,7 +48,7 @@ apply_new_event(Event, State) ->
     NewState#state{events=NewEvents}.
 
 apply_event(#player_created{name=Name, date_created=_DateCreated}, State) ->
-    case gproc:where({n,l, {player, Name}}) of
+    case gproc:where(?KEY(Name)) of
         undefined ->
             gproc:reg(?KEY(Name)),
             gproc:await(?KEY(Name));
