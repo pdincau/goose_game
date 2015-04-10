@@ -9,4 +9,4 @@ Run as:
     $ erl -pa _build/default/lib/*/ebin
     1> application:start(gproc).
     ok
-    2> goose_game:start().
+    2> goose_game_client:start().
