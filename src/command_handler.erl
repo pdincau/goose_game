@@ -8,6 +8,7 @@
 
 -record(state, {}).
 -record(add_player, {name}).
+-record(move_player, {name, steps}).
 
 subscribe() ->
     command_bus:add_handler(?MODULE, []).
