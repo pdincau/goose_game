@@ -1,24 +1,30 @@
 -module(player).
--export([start/1, init/0]).
+-export([start/1, load_from_history/1, move/2, init/0]).
 
--record(state, {name, events}).
+-record(state, {name, events, position}).
 -record(player_created, {name, date_created}).
+-record(player_moved, {name, steps, date_command}).
 
 -define(TIMEOUT, 10000).
 -define(KEY(Name), {n, l, {?MODULE, Name}}).
 
 start(Name) ->
     Pid = spawn(?MODULE, init, []),
-    case event_store:get(Name) of
-        [] ->
-            Pid ! {attempt_command, {create, Name}},
-            Pid ! process_unsaved_events;
-        Events ->
-            Pid ! {replay_events, Events}
-    end.
+    Pid ! {attempt_command, {create, Name}},
+    Pid ! process_unsaved_events.
+
+load_from_history(Events) ->
+    Pid = spawn(?MODULE, init, []),
+    Pid ! {replay_events, Events},
+    Pid.
+
+move(Pid, Steps) ->
+    io:format("move player of ~p steps~n", [Steps]),
+    Pid ! {attempt_command, {move, Steps}},
+    Pid ! process_unsaved_events.
 
 init() ->
-    loop(#state{events=[]}).
+    loop(#state{events=[], position=0}).
 
 loop(State) ->
     receive
@@ -40,6 +46,10 @@ loop(State) ->
 
 attempt_command({create, Name}, State) ->
     Event = #player_created{name=Name, date_created=erlang:localtime()},
+    apply_new_event(Event, State);
+
+attempt_command({move, Steps}, #state{name=Name} = State) ->
+    Event = #player_moved{name=Name, steps=Steps, date_command=erlang:localtime()},
     apply_new_event(Event, State).
 
 apply_new_event(Event, State) ->
@@ -54,16 +64,19 @@ apply_event(#player_created{name=Name, date_created=_DateCreated}, State) ->
             gproc:await(?KEY(Name));
         Pid -> Pid
     end,
-    State#state{name=Name}.
+    State#state{name=Name};
+
+apply_event(#player_moved{steps=Steps}, #state{position=Position} = State) ->
+    NewPosition = Position + Steps,
+    State#state{position=NewPosition}.
 
 handle_unsaved_events(#state{name=Name, events=Events} = State) ->
     io:format("Player ~p is processing unsaved events ~p~n", [Name, Events]),
     event_store:save(Name, Events),
     State#state{events=[]}.
 
-handle_unknown_message(Msg, #state{name=Name, events=Events} = _State) ->
-    io:format("Player ~p received message ~p~n", [Name, Msg]),
-    io:format("Player ~p has events ~p~n", [Name, Events]).
+handle_unknown_message(Msg, #state{name=Name, events=_Events} = _State) ->
+    io:format("Player ~p received message ~p~n", [Name, Msg]).
 
 handle_replay_events([], State) ->
     State;

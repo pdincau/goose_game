@@ -21,6 +21,11 @@ handle_event(#add_player{name=Name}, State) ->
     handle_add_player(Name),
     {ok, State};
 
+handle_event(#move_player{name=Name, steps=Steps}, State) ->
+    io:format("Received command move_player with name ~p and steps: ~p~n", [Name, Steps]),
+    handle_move_player(Name, Steps),
+    {ok, State};
+
 handle_event(Command , State) ->
     io:format("Received unknown command: ~p~n", [Command]),
     {ok, State}.
@@ -48,3 +53,10 @@ handle_add_player(Name) ->
             ok
     end.
 
+handle_move_player(Name, Steps) ->
+    case players:find(Name) of
+        {error, not_found} ->
+            io:format("Can't move not existing player with name: ~p~n", [Name]);
+        {ok, Pid} ->
+            player:move(Pid, Steps)
+    end.
