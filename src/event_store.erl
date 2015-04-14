@@ -12,7 +12,8 @@ save(Name, Events) ->
     StoredEvents = get_raw_events(Name),
     CombinedEvents = Events ++ StoredEvents,
     ets:insert(?TABLE_ID, {Name, CombinedEvents}),
-    io:format("Player ~p has now events ~p~n", [Name, CombinedEvents]).
+    io:format("Player ~p has now events ~p~n", [Name, CombinedEvents]),
+    [event_bus:send(Event) || Event <- Events].
 
 
 get(Name) ->
