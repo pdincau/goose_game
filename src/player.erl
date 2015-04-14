@@ -1,5 +1,5 @@
 -module(player).
--export([start/1, load_from_history/1, move/2, init/0]).
+-export([start/1, load_from_events/1, move/2, init/0]).
 
 -record(state, {name, events, position}).
 -record(player_created, {name, date_created}).
@@ -13,7 +13,7 @@ start(Name) ->
     Pid ! {attempt_command, {create, Name}},
     Pid ! process_unsaved_events.
 
-load_from_history(Events) ->
+load_from_events(Events) ->
     Pid = spawn(?MODULE, init, []),
     Pid ! {replay_events, Events},
     Pid.

@@ -14,6 +14,6 @@ load_from_event_store(Name) ->
         [] ->
             {error, not_found};
         Events ->
-            Pid = player:load_from_history(Events),
+            Pid = player:load_from_events(Events),
             {ok, Pid}
     end.
