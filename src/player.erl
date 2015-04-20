@@ -8,6 +8,7 @@
 
 -define(SERVER, ?MODULE).
 -define(KEY(Name), {n, l, {?MODULE, Name}}).
+-define(TIMEOUT, 10000).
 
 -record(state, {name, events, position}).
 -record(player_created, {name, date_created}).
@@ -28,37 +29,37 @@ load_from_events(Events) ->
     Pid.
 
 init([]) ->
-    {ok, #state{position=0, events=[]}, 10000}.
+    {ok, #state{position=0, events=[]}, ?TIMEOUT}.
 
 handle_call({create, Name}, _From, State) ->
     Event = #player_created{name=Name, date_created=erlang:localtime()},
     NewState = apply_new_event(Event, State),
-    {reply, ok, NewState, 10000};
+    {reply, ok, NewState, ?TIMEOUT};
 
 handle_call({move, Steps}, _From, #state{name=Name}=State) ->
     Event = #player_moved{name=Name, steps=Steps, date_command=erlang:localtime()},
     NewState = apply_new_event(Event, State),
-    {reply, ok, NewState, 10000};
+    {reply, ok, NewState, ?TIMEOUT};
 
 handle_call({replay_events, Events}, _From, State) ->
     NewState = handle_replay_events(Events, State),
-    {reply, ok, NewState, 10000};
+    {reply, ok, NewState, ?TIMEOUT};
 
 handle_call(process_unsaved_events, _From, State) ->
     NewState = handle_unsaved_events(State),
-    {reply, ok, NewState, 10000};
+    {reply, ok, NewState, ?TIMEOUT};
 
 handle_call(_Request, _From, State) ->
-    {reply, ok, State, 10000}.
+    {reply, ok, State, ?TIMEOUT}.
 
 handle_cast(_Msg, State) ->
-    {noreply, State, 10000}.
+    {noreply, State, ?TIMEOUT}.
 
 handle_info(timeout, State) ->
     {stop, normal, State};
 
 handle_info(_Info, State) ->
-    {noreply, State, 10000}.
+    {noreply, State, ?TIMEOUT}.
 
 terminate(_Reason, _State) ->
     ok.
