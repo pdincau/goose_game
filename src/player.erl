@@ -49,8 +49,7 @@ handle_call(process_unsaved_events, _From, State) ->
     {reply, ok, NewState, 10000};
 
 handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State, 10000}.
+    {reply, ok, State, 10000}.
 
 handle_cast(_Msg, State) ->
     {noreply, State, 10000}.
@@ -86,7 +85,6 @@ apply_event(#player_moved{steps=Steps}, #state{position=Position} = State) ->
     State#state{position=NewPosition}.
 
 handle_unsaved_events(#state{name=Name, events=Events} = State) ->
-    io:format("Player ~p is processing unsaved events ~p~n", [Name, Events]),
     event_store:save(Name, Events),
     State#state{events=[]}.
 
@@ -94,6 +92,5 @@ handle_replay_events([], State) ->
     State;
 
 handle_replay_events([Event|Events], State) ->
-    io:format("Event ~p on state ~p~n", [Event, State]),
     NewState = apply_event(Event, State),
     handle_replay_events(Events, NewState).
