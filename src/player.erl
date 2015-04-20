@@ -1,56 +1,71 @@
 -module(player).
--export([start/1, load_from_events/1, move/2, init/0]).
+-behaviour(gen_server).
+
+-export([start/1, move/2, load_from_events/1]).
+
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+         terminate/2, code_change/3]).
+
+-define(SERVER, ?MODULE).
+-define(KEY(Name), {n, l, {?MODULE, Name}}).
+-define(TIMEOUT, 10000).
 
 -record(state, {name, events, position}).
 -record(player_created, {name, date_created}).
 -record(player_moved, {name, steps, date_command}).
 
--define(TIMEOUT, 10000).
--define(KEY(Name), {n, l, {?MODULE, Name}}).
-
 start(Name) ->
-    Pid = spawn(?MODULE, init, []),
-    Pid ! {attempt_command, {create, Name}},
-    Pid ! process_unsaved_events.
-
-load_from_events(Events) ->
-    Pid = spawn(?MODULE, init, []),
-    Pid ! {replay_events, Events},
-    Pid.
+    {ok, Pid} = gen_server:start(?MODULE, [], []),
+    gen_server:call(Pid, {create, Name}),
+    gen_server:call(Pid, process_unsaved_events).
 
 move(Pid, Steps) ->
-    io:format("move player of ~p steps~n", [Steps]),
-    Pid ! {attempt_command, {move, Steps}},
-    Pid ! process_unsaved_events.
+    gen_server:call(Pid, {move, Steps}),
+    gen_server:call(Pid, process_unsaved_events).
 
-init() ->
-    loop(#state{events=[], position=0}).
+load_from_events(Events) ->
+    {ok, Pid} = gen_server:start(?MODULE, [], []),
+    gen_server:call(Pid, {replay_events, Events}),
+    Pid.
 
-loop(State) ->
-    receive
-        {attempt_command, Command} ->
-            NewState = attempt_command(Command, State),
-            loop(NewState);
-        process_unsaved_events ->
-            NewState = handle_unsaved_events(State),
-            loop(NewState);
-        {replay_events, Events} ->
-            NewState = handle_replay_events(Events, State),
-            loop(NewState);
-        Msg ->
-            handle_unknown_message(Msg, State),
-            loop(State)
-    after ?TIMEOUT ->
-            ok
-    end.
+init([]) ->
+    {ok, #state{position=0, events=[]}, ?TIMEOUT}.
 
-attempt_command({create, Name}, State) ->
+handle_call({create, Name}, _From, State) ->
     Event = #player_created{name=Name, date_created=erlang:localtime()},
-    apply_new_event(Event, State);
+    NewState = apply_new_event(Event, State),
+    {reply, ok, NewState, ?TIMEOUT};
 
-attempt_command({move, Steps}, #state{name=Name} = State) ->
+handle_call({move, Steps}, _From, #state{name=Name}=State) ->
     Event = #player_moved{name=Name, steps=Steps, date_command=erlang:localtime()},
-    apply_new_event(Event, State).
+    NewState = apply_new_event(Event, State),
+    {reply, ok, NewState, ?TIMEOUT};
+
+handle_call({replay_events, Events}, _From, State) ->
+    NewState = handle_replay_events(Events, State),
+    {reply, ok, NewState, ?TIMEOUT};
+
+handle_call(process_unsaved_events, _From, State) ->
+    NewState = handle_unsaved_events(State),
+    {reply, ok, NewState, ?TIMEOUT};
+
+handle_call(_Request, _From, State) ->
+    {reply, ok, State, ?TIMEOUT}.
+
+handle_cast(_Msg, State) ->
+    {noreply, State, ?TIMEOUT}.
+
+handle_info(timeout, State) ->
+    {stop, normal, State};
+
+handle_info(_Info, State) ->
+    {noreply, State, ?TIMEOUT}.
+
+terminate(_Reason, _State) ->
+    ok.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
 apply_new_event(Event, State) ->
     NewState = apply_event(Event, State),
@@ -71,17 +86,12 @@ apply_event(#player_moved{steps=Steps}, #state{position=Position} = State) ->
     State#state{position=NewPosition}.
 
 handle_unsaved_events(#state{name=Name, events=Events} = State) ->
-    io:format("Player ~p is processing unsaved events ~p~n", [Name, Events]),
     event_store:save(Name, Events),
     State#state{events=[]}.
-
-handle_unknown_message(Msg, #state{name=Name, events=_Events} = _State) ->
-    io:format("Player ~p received message ~p~n", [Name, Msg]).
 
 handle_replay_events([], State) ->
     State;
 
 handle_replay_events([Event|Events], State) ->
-    io:format("Event ~p on state ~p~n", [Event, State]),
     NewState = apply_event(Event, State),
     handle_replay_events(Events, NewState).
